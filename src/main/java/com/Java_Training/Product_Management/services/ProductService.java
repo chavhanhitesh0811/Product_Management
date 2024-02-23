@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.Java_Training.Product_Management.dto.ProductDTO;
+import com.Java_Training.Product_Management.entities.Cart;
 import com.Java_Training.Product_Management.entities.Product;
 import com.Java_Training.Product_Management.entities.User;
 import com.Java_Training.Product_Management.exceptions.InternalServerException;
@@ -19,6 +20,7 @@ import com.Java_Training.Product_Management.exceptions.InvalidRquestFieldExcepti
 import com.Java_Training.Product_Management.exceptions.NoProductFoundException;
 import com.Java_Training.Product_Management.exceptions.UnauthorizedUserException;
 import com.Java_Training.Product_Management.mapper.ProductMapper;
+import com.Java_Training.Product_Management.repository.CartRepository;
 import com.Java_Training.Product_Management.repository.ProductRepository;
 import com.Java_Training.Product_Management.repository.UserRepository;
 import com.Java_Training.Product_Management.utils.ProductServiceUtilityFunctions;
@@ -32,9 +34,13 @@ public class ProductService {
 	@Autowired
 	private UserRepository userRepository;
 
+	@Autowired
+	private CartRepository cartRepository;
+
 	private HashMap<String, LinkedList<Integer>> map = new HashMap<>();
 
-	public List<Product> addProduct(ProductDTO productDto,String userId) throws InternalServerException, InvalidRquestFieldException {
+	public List<Product> addProduct(ProductDTO productDto, String userId)
+			throws InternalServerException, InvalidRquestFieldException {
 
 //		convert DTO to Entity
 		Product product = ProductMapper.convertDtoToEntity(productDto);
@@ -43,7 +49,7 @@ public class ProductService {
 
 //		saving that product to database
 		Product savedProduct = productRepository.save(product);
-		
+
 //		uploading immage to the folder
 
 //		Handling Exception
@@ -91,7 +97,7 @@ public class ProductService {
 
 //		caching implementation for least visited products
 		map = ProductServiceUtilityFunctions.leasetVisitedCache(map, userId, productId);
-		
+
 		Product newProduct = product.get();
 
 //		updating the values
@@ -201,9 +207,42 @@ public class ProductService {
 
 		return mostRecentVisited;
 	}
-	
-	public List<Product> getProductByUserEmail(String userEmail){
+
+	public List<Product> getProductByUserEmail(String userEmail) {
 		List<Product> products = productRepository.findByEmail(userEmail);
 		return products;
+	}
+
+	public List<Cart> addToCart(int productId, String userEmail) throws InternalServerException {
+
+		Cart isAlereadyInserted = cartRepository.findByUserIdAndProductId(userEmail, productId);
+		if (isAlereadyInserted != null) {
+			return new ArrayList<Cart>();
+		} else {
+			Cart cart = new Cart();
+			cart.setProductId(productId);
+			cart.setUserId(userEmail);
+
+			Cart savedCart = cartRepository.save(cart);
+
+			if (savedCart == null) {
+				throw new InternalServerException("Failed to add the product to cart, Please try again.");
+			}
+
+			List<Cart> savedProductToCart = new ArrayList<Cart>();
+			savedProductToCart.add(savedCart);
+
+			return savedProductToCart;
+		}
+	}
+
+	public List<Product> getCartedProduct(String userId) {
+		List<Product> cartedProduct = cartRepository.getCartedProduct(userId);
+		return new ArrayList<Product>(cartedProduct);
+	}
+
+	public void removeFromCart(int productId, String userId) {
+		Cart cart = cartRepository.findByUserIdAndProductId(userId, productId);
+		cartRepository.delete(cart);
 	}
 }

@@ -54,7 +54,6 @@ public class ProductController {
 	@CrossOrigin(origins = "*")
 	public ResponseEntity<Object> addProduct(@Valid @RequestBody ProductDTO productDto, Principal user)
 			throws InternalServerException, InvalidRquestFieldException {
-		System.err.println(productDto);
 		List<Product> savedProduct = productService.addProduct(productDto, user.getName());
 		return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse(200, "SUCCESS",
 				"Product Inserted Successfully.", new ArrayList<Object>(savedProduct)));
@@ -62,7 +61,7 @@ public class ProductController {
 
 	@GetMapping("/product")
 	@CrossOrigin(origins = "*")
-	public ResponseEntity<Object> getAllProducts(HttpServletRequest request)
+	public ResponseEntity<Object> getAllProducts()
 			throws NoProductFoundException, UnauthorizedUserException {
 		List<Product> products = productService.getAllProducts();
 		return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse(200, "SUCCESS",
@@ -113,6 +112,32 @@ public class ProductController {
 		return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse(200, "SUCCESS",
 				"Products Retrived Successfully.", new ArrayList<Object>(products)));
 	}
+	
+	@PostMapping("/addToCart/{productId}")
+	@CrossOrigin(origins = "*")
+	public ResponseEntity<Object>addToCart(@PathVariable("productId") int productId , Principal user) throws InternalServerException{
+		productService.addToCart(productId, user.getName());
+		return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse(200,"SUCCESS","Product added to cart successfully."));
+	}
+	
+	@GetMapping("/cartedProducts")
+	@CrossOrigin(origins = "*")
+	public ResponseEntity<Object> getCartedProducts(Principal user)
+			throws NoProductFoundException, UnauthorizedUserException {
+		List<Product> products = productService.getCartedProduct(user.getName());
+		return ResponseEntity.status(HttpStatus.OK).body(new SuccessResponse(200, "SUCCESS",
+				"Products Retrived Successfully.", new ArrayList<Object>(products)));
+	}
+	
+	@DeleteMapping("/removeFromCart/{id}")
+	@CrossOrigin(origins = "*")
+	public ResponseEntity<Object> removeFromCart(@PathVariable("id") int id, Principal  user)
+			throws InvalidProductIdException, UnauthorizedUserException {
+		productService.removeFromCart(id, user.getName());
+		return ResponseEntity.status(HttpStatus.OK)
+				.body(new SuccessResponse(200, "SUCCESS", "Product removed from cart successfully."));
+	}
+	
 	
 //	private static final String UPLOAD_DIR = "C:\\Users\\kanaka\\Downloads\\product_management_frontend\\src\\app\\uploads\\";
 //
